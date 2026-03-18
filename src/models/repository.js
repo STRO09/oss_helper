@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
 
+const languageSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    percent: { type: Number, required: true },
+  },
+  {
+    _id: false,
+  },
+);
+
 const repositorySchema = new mongoose.Schema(
   {
     repo_id: {
@@ -10,7 +20,7 @@ const repositorySchema = new mongoose.Schema(
     },
     name: String,
     full_name: String,
-    primary_language: String,
+    primary_language: [languageSchema],
     stars: Number,
     last_activity_at: Date,
     url: String,
