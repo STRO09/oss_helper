@@ -28,6 +28,16 @@ async function rankIssue(userPreference) {
 
     if (!signal || !repo) continue;
 
+    if (userPreference.length > 0 && repo.primary_language) {
+      repo.primary_language.forEach((langObj) => {
+        if (userPreference.includes(langObj.name)) {
+          stackMatch += langObj.percent; //not good enough logic
+        }
+      });
+    }
+
+    stackMatch = stackMatch / 100;
+
     const freshness = signal.freshness_score || 0;
     const crowd = signal.crowd_score || 0;
     const repoActivity = signal.repo_activity_score || 0;
@@ -44,17 +54,18 @@ async function rankIssue(userPreference) {
       issue_id: issue.issue_id,
       title: issue.title,
       repo: repo.full_name,
-      score,
+      score: Number(score.toFixed(4)),
       explanation: {
         freshness,
         crowd,
         repoActivity,
         labelIntent,
-        stackMatch,
+        stackMatch: Number(stackMatch.toFixed(4)),
       },
     });
   }
 
+  //sort
   ranked.sort((a, b) => b.score - a.score);
 
   return ranked;

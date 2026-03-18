@@ -11,8 +11,10 @@ async function run() {
   await connectDB();
   await ingestIssuse();
   await computeSignalForAllIssues();
-  const rank = await rankIssue();
-  console.log(rank);
+  const skills = ["JavaScript", "C++", "Java"];
+  const rank = await rankIssue(skills);
+  // console.table(rank.slice(0, 5));
+  console.log(JSON.stringify(rank, null, 2));
   process.exit(0);
 }
 
