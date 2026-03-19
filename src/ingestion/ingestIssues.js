@@ -1,5 +1,9 @@
 // orchestrates fetching
-const { fetchOpenIssues } = require("./githubClient");
+const {
+  fetchOpenIssues,
+  fetchRepoOfIssue,
+  fetchLangOfRepo,
+} = require("./githubClient");
 const { normaliseIssue } = require("./issueNormalizer");
 const issueModel = require("../models/issue");
 const repoModel = require("../models/repository");
@@ -19,6 +23,34 @@ async function ingestIssuse() {
 
     const { issue, repo } = pair;
 
+    const existingRepo = await repoModel.findOne({ repo_id: repo.repo_id });
+
+    //filling important repo data if the data or repo doesn't exist
+    if (
+      !existingRepo ||
+      existingRepo.primary_language === null ||
+      existingRepo.primary_language.length === 0
+    ) {
+      const [userName, repoName] = repo.repo_id.split("/");
+      const [repoStarData, repoLanguage] = await Promise.all([
+        fetchRepoOfIssue(userName, repoName),
+        fetchLangOfRepo(userName, repoName),
+      ]);
+      // const repoStarData = await fetchRepoOfIssue(userName, repoName);
+      // const repoLanguage = await fetchLangOfRepo(userName, repoName);
+
+      if (repoStarData) {
+        // repo.primary_language = repoStarData.primary_language;
+        repo.stars = repoStarData.stars;
+      }
+
+      if (repoLanguage) {
+        repo.primary_language = repoLanguage;
+      }
+    } else {
+      repo.primary_language = existingRepo.primary_language;
+      repo.stars = existingRepo.stars || repo.stars;
+    }
     //now we will upsert repo so no same repo with different issue gets new entry in db again
     await repoModel.updateOne(
       { repo_id: repo.repo_id },

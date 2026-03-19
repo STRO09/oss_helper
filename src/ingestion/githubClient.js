@@ -12,6 +12,8 @@
 // An array of raw GitHub issue objects, untouched
 
 const axios = require("axios");
+const { response } = require("express");
+let isGithubTokenValidated = false;
 
 const github_api_base = "https://api.github.com";
 
@@ -20,6 +22,21 @@ async function fetchOpenIssues() {
 
   if (!token) {
     throw new Error("Github token not found in env variables");
+  }
+
+  //token check
+  if (!isGithubTokenValidated) {
+    try {
+      const resposne = await axios.get(`${github_api_base}/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      isGithubTokenValidated = true;
+    } catch (error) {
+      throw new Error("Github token in either expired or doesn't have scope");
+    }
   }
 
   const query = ["is:issue", "is:open", "updated:>=2026-01-01"].join(" ");
@@ -50,4 +67,81 @@ async function fetchOpenIssues() {
   }
 }
 
-module.exports = { fetchOpenIssues };
+async function fetchRepoOfIssue(username, repoName) {
+  const token = process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    throw new Error("Config error: github token is missing from env file.");
+  }
+
+  //token check
+  if (!isGithubTokenValidated) {
+    throw new Error("Github token in either expired or doesn't have scope");
+  }
+
+  //REPO API call
+  try {
+    const response = await axios.get(
+      `${github_api_base}/repos/${username}/${repoName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      },
+    );
+
+    return {
+      primary_language: response.data.language,
+      stars: response.data.stargazers_count,
+    };
+  } catch (error) {
+    console.error(
+      `Error fetching repo details for ${username}/${repoName}:`,
+      error.message,
+    );
+    return null;
+  }
+}
+
+async function fetchLangOfRepo(userName, repoName) {
+  const token = process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    throw new Error("Config error: github token is missing from env file.");
+  }
+
+  //token check
+  if (!isGithubTokenValidated) {
+    throw new Error("Github token in either expired or doesn't have scope");
+  }
+
+  try {
+    const response = await axios.get(
+      `${github_api_base}/repos/${userName}/${repoName}/languages`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: `application/vnd.github+json`,
+        },
+      },
+    );
+
+    //need to learn about this concept
+    const rawData = response.data;
+    const totalBytes = Object.values(rawData).reduce((acc, b) => acc + b, 0);
+
+    return Object.entries(rawData).map(([name, bytes]) => ({
+      name: name,
+      percent: totalBytes > 0 ? (bytes / totalBytes) * 100 : 0,
+    }));
+  } catch (error) {
+    console.error(
+      `Error fetching languages for ${userName}/${repoName}:`,
+      error.message,
+    );
+    return null;
+  }
+}
+
+module.exports = { fetchOpenIssues, fetchRepoOfIssue, fetchLangOfRepo };
