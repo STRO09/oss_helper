@@ -1,12 +1,6 @@
 function computeAndReturnCrowdScore(issue) {
-  const comments = issue.comment_count;
-
-  if (comments === 0) return 1;
-  if (comments <= 3) return 0.8;
-  if (comments <= 10) return 0.6;
-  if (comments <= 25) return 0.4;
-
-  return 0.2;
+  const commentCount = issue.comment_count;
+  return 1 / (1 + Math.log(1 + commentCount));
 }
 
 module.exports = { computeAndReturnCrowdScore };

@@ -8,8 +8,8 @@ const { normaliseIssue } = require("./issueNormalizer");
 const issueModel = require("../models/issue");
 const repoModel = require("../models/repository");
 
-async function ingestIssuse() {
-  const rawIssues = await fetchOpenIssues();
+async function ingestIssue(pageNumber = 1) {
+  const rawIssues = await fetchOpenIssues(pageNumber);
 
   //filter out issues with pr because they are most probably solved
   const issuesWithNoPr = rawIssues.filter((e) => !e.pull_request);
@@ -70,4 +70,4 @@ async function ingestIssuse() {
   console.log(`Ingestion completed to DB ${count} times`);
 }
 
-module.exports = { ingestIssuse };
+module.exports = { ingestIssue };

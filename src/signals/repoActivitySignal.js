@@ -4,11 +4,7 @@ function computeAndReturnRepoActivityScore(repo) {
 
   const diffDays = (now - updatedAt) / (1000 * 60 * 60 * 24);
 
-  if (diffDays <= 3) return 1;
-  if (diffDays <= 7) return 0.8;
-  if (diffDays <= 14) return 0.6;
-  if (diffDays <= 30) return 0.4;
-  return 0.2;
+  return Math.max(0, 1 - diffDays / 45);
 }
 
 module.exports = { computeAndReturnRepoActivityScore };

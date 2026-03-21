@@ -17,7 +17,7 @@ let isGithubTokenValidated = false;
 
 const github_api_base = "https://api.github.com";
 
-async function fetchOpenIssues() {
+async function fetchOpenIssues(pageNumber = 1) {
   const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
@@ -39,7 +39,14 @@ async function fetchOpenIssues() {
     }
   }
 
-  const query = ["is:issue", "is:open", "updated:>=2026-01-01"].join(" ");
+  // const query = ["is:issue", "is:open", "no:assignee"].join(" ");
+  const query = [
+    "is:issue",
+    "is:open",
+    "stars:>50",
+    "comments:0..20",
+    "created:>=2025-12-01",
+  ].join(" ");
 
   try {
     const response = await axios.get(`${github_api_base}/search/issues`, {
@@ -53,6 +60,7 @@ async function fetchOpenIssues() {
         sort: "updated",
         order: "desc",
         per_page: 10,
+        page: pageNumber,
       },
     });
 
